@@ -1,0 +1,233 @@
+/* =====================================================================
+   Spell Tracker overlay - estilo translucido
+   ===================================================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 13px;
+}
+
+#overlay {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 14, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 6px 8px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  -webkit-app-region: drag; /* permite arrastar pela area inteira (exceto botoes/spells) */
+}
+
+/* botoes/spells nao devem disparar drag */
+button, .spell-btn, .ci, #close-btn, #resize-grip {
+  -webkit-app-region: no-drag;
+}
+
+/* ---------- Header ---------- */
+
+#header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 2px 4px;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  font-weight: 500;
+}
+
+#header-title {
+  color: rgba(255, 255, 255, 0.5);
+}
+#header-divider {
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0 2px;
+}
+#status-dot {
+  font-size: 12px;
+  line-height: 1;
+}
+#status-dot.live { color: #7dca7d; }
+#status-dot.idle { color: #888; }
+#status-text {
+  color: rgba(255, 255, 255, 0.6);
+}
+#status-dot.live + #status-text { color: #7dca7d; }
+
+#close-btn {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 16px;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+#close-btn:hover { color: rgba(255, 255, 255, 0.95); }
+
+/* ---------- Linhas dos inimigos ---------- */
+
+#rows-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.enemy-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 0;
+}
+
+.ci {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: white;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.role {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  min-width: 22px;
+}
+
+/* ---------- Spell button ---------- */
+
+.spell-btn {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  flex-shrink: 0;
+  padding: 0;
+  background-size: cover;
+  background-position: center;
+  transition: filter 0.15s;
+}
+
+.spell-btn:hover {
+  filter: brightness(1.15);
+}
+
+.spell-btn.has-icon {
+  background-color: transparent;
+}
+
+.spell-btn.no-icon {
+  /* Cor de fundo aplicada via JS conforme o spell */
+}
+
+.spell-btn .timer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  border-radius: 3px;
+  color: white;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.spell-btn .timer.warn {
+  color: #ffcd5b;
+}
+
+.spell-btn:not(.active) .timer { display: none; }
+
+/* ---------- Toolbar ---------- */
+
+#toolbar {
+  display: flex;
+  gap: 4px;
+  padding: 4px 2px 0;
+}
+
+.tb-btn {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tb-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.tb-btn.active {
+  background: rgba(120, 180, 255, 0.18);
+  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(120, 180, 255, 0.4);
+}
+
+/* ---------- Resize grip (canto inferior direito) ---------- */
+
+#resize-grip {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+  background-image: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.35) 50%,
+    rgba(255, 255, 255, 0.35) 60%,
+    transparent 60%,
+    transparent 70%,
+    rgba(255, 255, 255, 0.35) 70%,
+    rgba(255, 255, 255, 0.35) 80%,
+    transparent 80%,
+    transparent 90%,
+    rgba(255, 255, 255, 0.35) 90%
+  );
+}

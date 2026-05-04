@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Spell Tracker by aamorimzzz</title>
+  <link rel="stylesheet" href="desktop.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Spell Tracker</h1>
+    <p class="sub">by aamorimzzz</p>
+
+    <div class="card">
+      <h2>Como usar</h2>
+      <ol>
+        <li>Abra o League of Legends em <strong>Janela sem Bordas</strong> (Configurações → Vídeo → Modo de Janela → "Janela sem Bordas")</li>
+        <li>Entre numa partida — o overlay aparece automaticamente</li>
+        <li>Os 5 inimigos são detectados em até 3s com seus campeões e summs corretos</li>
+        <li>Clique no feitiço quando o inimigo usar — começa o timer</li>
+        <li>Clique novamente pra resetar</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>Atalhos</h2>
+      <div class="hotkey-row">
+        <span class="hk-name">Mostrar / esconder overlay</span>
+        <span class="hk-keys">Shift + Tab</span>
+      </div>
+      <div class="hotkey-row">
+        <span class="hk-name">Resetar todos os timers</span>
+        <span class="hk-keys">Shift + R</span>
+      </div>
+      <p class="hk-note">Você pode reconfigurar em Overwolf → Settings → Hotkeys</p>
+    </div>
+
+    <div class="card">
+      <h2>Status</h2>
+      <p id="lol-status" class="status-line">Verificando se o LoL está aberto...</p>
+    </div>
+  </div>
+
+  <script src="desktop.js"></script>
+</body>
+</html>

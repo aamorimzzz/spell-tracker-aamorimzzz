@@ -1,0 +1,100 @@
+{
+  "manifest_version": 1,
+  "type": "WebApp",
+
+  "meta": {
+    "name": "Spell Tracker by aamorimzzz",
+    "version": "0.1.0",
+    "minimum-overwolf-version": "0.176.0",
+    "author": "aamorimzzz",
+    "icon": "icons/IconMouseOver.png",
+    "icon_gray": "icons/IconMouseNormal.png",
+    "launcher_icon": "icons/DesktopIcon.ico",
+    "window_icon": "icons/IconMouseOver.png",
+    "description": "Manual summoner spell tracker para League of Legends. Marca o tempo dos feitiços inimigos com 1 clique."
+  },
+
+  "permissions": [
+    "Hotkeys",
+    "GameInfo",
+    "Extensions"
+  ],
+
+  "data": {
+    "start_window": "background",
+
+    "windows": {
+      "background": {
+        "file": "js/background.html",
+        "is_background_page": true,
+        "show_in_taskbar": false
+      },
+      "ingame": {
+        "file": "windows/ingame/ingame.html",
+        "transparent": true,
+        "resizable": true,
+        "show_in_taskbar": false,
+        "in_game_only": true,
+        "clickable": true,
+        "topmost": true,
+        "size": {
+          "width": 240,
+          "height": 320
+        },
+        "min_size": {
+          "width": 180,
+          "height": 220
+        },
+        "start_position": {
+          "top": 40,
+          "left": 40
+        }
+      },
+      "desktop": {
+        "file": "windows/desktop/desktop.html",
+        "desktop_only": true,
+        "transparent": false,
+        "resizable": true,
+        "show_in_taskbar": true,
+        "size": {
+          "width": 480,
+          "height": 540
+        },
+        "min_size": {
+          "width": 400,
+          "height": 480
+        }
+      }
+    },
+
+    "game_targeting": {
+      "type": "dedicated",
+      "game_ids": [5426]
+    },
+
+    "game_events": [5426],
+
+    "launch_events": [
+      {
+        "event": "GameLaunch",
+        "event_data": {
+          "game_ids": [5426]
+        },
+        "start_minimized": false
+      }
+    ],
+
+    "hotkeys": {
+      "spell_tracker_toggle": {
+        "title": "Mostrar / esconder overlay",
+        "action-type": "toggle",
+        "default": "Shift+Tab"
+      },
+      "spell_tracker_reset": {
+        "title": "Resetar todos os timers",
+        "action-type": "custom",
+        "default": "Shift+R"
+      }
+    }
+  }
+}

@@ -1,0 +1,87 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #14171d;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  font-size: 14px;
+  overflow-y: auto;
+}
+
+.container {
+  max-width: 100%;
+  padding: 24px 28px;
+}
+
+h1 {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+
+.sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 2px;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+
+.card h2 {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 10px;
+  letter-spacing: 0.3px;
+}
+
+.card ol {
+  padding-left: 18px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.7;
+}
+
+.card ol li { margin-bottom: 4px; }
+
+.hotkey-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+}
+.hotkey-row:last-of-type { border-bottom: none; }
+
+.hk-name { color: rgba(255, 255, 255, 0.75); }
+.hk-keys {
+  background: rgba(120, 180, 255, 0.12);
+  color: #9ec5ff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Consolas', monospace;
+}
+
+.hk-note {
+  margin-top: 10px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.status-line {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+}
+.status-line.live { color: #7dca7d; }
+.status-line.idle { color: rgba(255, 255, 255, 0.5); }
