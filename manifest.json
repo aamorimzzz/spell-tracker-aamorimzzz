@@ -1,28 +1,24 @@
 {
   "manifest_version": 1,
   "type": "WebApp",
-
   "meta": {
     "name": "Spell Tracker by aamorimzzz",
-    "version": "0.2.2",
+    "version": "0.2.5",
     "minimum-overwolf-version": "0.176.0",
     "author": "aamorimzzz",
     "icon": "icons/IconMouseOver.png",
     "icon_gray": "icons/IconMouseNormal.png",
     "launcher_icon": "icons/DesktopIcon.ico",
     "window_icon": "icons/IconMouseOver.png",
-    "description": "Manual summoner spell tracker para League of Legends. Marca o tempo dos feitiços inimigos com 1 clique."
+    "description": "Manual summoner spell tracker para League of Legends. Marca o tempo dos feiti\u00e7os inimigos com 1 clique."
   },
-
   "permissions": [
     "Hotkeys",
     "GameInfo",
     "Extensions"
   ],
-
   "data": {
     "start_window": "background",
-
     "externally_connectable": {
       "matches": [
         "https://ddragon.leagueoflegends.com",
@@ -31,7 +27,6 @@
         "https://127.0.0.1"
       ]
     },
-
     "windows": {
       "background": {
         "file": "js/background.html",
@@ -78,24 +73,26 @@
         }
       }
     },
-
     "game_targeting": {
       "type": "dedicated",
-      "game_ids": [5426]
+      "game_ids": [
+        5426
+      ]
     },
-
-    "game_events": [5426],
-
+    "game_events": [
+      5426
+    ],
     "launch_events": [
       {
         "event": "GameLaunch",
         "event_data": {
-          "game_ids": [5426]
+          "game_ids": [
+            5426
+          ]
         },
         "start_minimized": false
       }
     ],
-
     "hotkeys": {
       "spell_tracker_toggle": {
         "title": "Mostrar / esconder overlay",

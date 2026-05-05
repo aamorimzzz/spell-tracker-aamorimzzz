@@ -264,6 +264,24 @@ button, .spell-btn, .ci, #close-btn, #resize-grip {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* Imagem do champion ocupa o círculo inteiro */
+.ci .champ-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+/* Imagem do spell ocupa o slot inteiro */
+.spell-icon .spell-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+
 /* Glow do campeão quando o jogo carrega */
 .ci.loaded {
   animation: champ-pop 400ms var(--ease-bounce);

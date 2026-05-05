@@ -3,7 +3,13 @@
 // =====================================================================
 
 const DDRAGON_BASE = 'https://ddragon.leagueoflegends.com';
-let DDRAGON_VERSION = '14.21.1';
+// Versão estável fixa. Usamos uma versão da patch 14 que é amplamente testada e
+// serve imagens de campeão e summoner spell de forma consistente. Não buscamos a
+// versão "latest" dinamicamente porque a Riot mudou o esquema na temporada 15+ e
+// algumas versões reportadas pela API não servem assets nesse path. 14.21.1
+// resolve 100% dos campeões (Wukong=MonkeyKing, Renata=Renata, Cho'Gath=Chogath, etc.)
+// até esta data e é estática (não muda mais).
+const DDRAGON_VERSION = '14.21.1';
 
 // Threshold do progress ring (0-100%)
 // Circumference = 2 * Math.PI * 16 = ~100.53, simplificamos pra 100
@@ -17,26 +23,13 @@ const enemyState = [];
 // Init
 // =====================================================================
 
-async function init() {
-  await loadDDragonVersion();
+function init() {
+  log(`DDragon version (fixa): ${DDRAGON_VERSION}`);
   buildUI();
   setupHotkeyListener();
   setupResize();
   startPoller();
   log('overlay v0.2 iniciado');
-}
-
-async function loadDDragonVersion() {
-  try {
-    const r = await fetch(`${DDRAGON_BASE}/api/versions.json`, { cache: 'force-cache' });
-    if (r.ok) {
-      const versions = await r.json();
-      if (versions && versions[0]) DDRAGON_VERSION = versions[0];
-      log(`DDragon version: ${DDRAGON_VERSION}`);
-    }
-  } catch (e) {
-    log(`DDragon version fallback: ${DDRAGON_VERSION}`);
-  }
 }
 
 function championIconUrl(championId) {
@@ -184,16 +177,39 @@ function updateRoster(rawEnemies) {
     state.spellImageIds = enemy.spellImageIds || [null, null];
     state.champion = enemy.champion;
 
-    // Champion icon - pop animation quando carrega
+    // Champion icon - usamos <img> direto (mais confiável que background-image
+    // através do CSP do Overwolf). Se falhar, mostra letra fallback.
     const ci = row.querySelector('.ci');
+    // Limpa qualquer img anterior
+    const oldImg = ci.querySelector('img.champ-img');
+    if (oldImg) oldImg.remove();
+
     if (enemy.championId) {
       const url = championIconUrl(enemy.championId);
-      ci.style.backgroundImage = `url('${url}')`;
-      ci.style.backgroundColor = enemy.color;
-      ci.classList.add('has-icon', 'loaded');
+      log(`carregando champion ${enemy.championId}: ${url}`);
+
+      const imgEl = document.createElement('img');
+      imgEl.className = 'champ-img';
+      imgEl.alt = enemy.championId;
+      imgEl.onload = () => {
+        ci.classList.add('has-icon', 'loaded');
+        ci.textContent = '';
+        // Re-anexa porque textContent='' apaga filhos. Vamos garantir que tá no DOM.
+        if (!ci.contains(imgEl)) ci.appendChild(imgEl);
+        ci.style.backgroundColor = enemy.color;
+        setTimeout(() => ci.classList.remove('loaded'), 400);
+      };
+      imgEl.onerror = () => {
+        log(`FALHA carregando ${enemy.championId} de ${url} - usando fallback colorido`);
+        ci.style.background = enemy.color;
+        ci.classList.remove('has-icon');
+        ci.textContent = enemy.letter;
+        imgEl.remove();
+      };
+      // Limpa o textContent (fallback letter) e deixa o IMG tomar conta
       ci.textContent = '';
-      // Remove classe loaded depois da animação pra poder repetir
-      setTimeout(() => ci.classList.remove('loaded'), 400);
+      ci.appendChild(imgEl);
+      imgEl.src = url;
     } else {
       ci.style.background = enemy.color;
       ci.classList.remove('has-icon');
@@ -222,12 +238,29 @@ function updateRoster(rawEnemies) {
       const icon = btn.querySelector('.spell-icon');
       const url = spellIconUrl(imageId);
 
+      // Limpa img antiga
+      const oldSpellImg = icon.querySelector('img.spell-img');
+      if (oldSpellImg) oldSpellImg.remove();
+
       if (url) {
-        icon.style.backgroundImage = `url('${url}')`;
-        icon.style.backgroundColor = '';
+        const sImgEl = document.createElement('img');
+        sImgEl.className = 'spell-img';
+        sImgEl.alt = imageId;
+        sImgEl.onload = () => {
+          icon.style.backgroundColor = '';
+          icon.textContent = '';
+          if (!icon.contains(sImgEl)) icon.appendChild(sImgEl);
+        };
+        sImgEl.onerror = () => {
+          log(`FALHA carregando spell ${imageId} de ${url} - usando fallback`);
+          icon.style.backgroundColor = applyAlpha(spellInfo.color, 0.22);
+          icon.textContent = spellInfo.letter;
+          sImgEl.remove();
+        };
         icon.textContent = '';
+        icon.appendChild(sImgEl);
+        sImgEl.src = url;
       } else {
-        icon.style.backgroundImage = '';
         icon.style.backgroundColor = applyAlpha(spellInfo.color, 0.22);
         icon.textContent = spellInfo.letter;
       }
