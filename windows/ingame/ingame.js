@@ -1,19 +1,20 @@
 // =====================================================================
-// Spell Tracker - logica do overlay in-game
+// Spell Tracker - logica do overlay v0.2 (com animacoes)
 // =====================================================================
 
 const DDRAGON_BASE = 'https://ddragon.leagueoflegends.com';
+let DDRAGON_VERSION = '14.21.1';
 
-// Versao do Data Dragon - vamos puxar dinamicamente na inicializacao
-let DDRAGON_VERSION = '14.21.1'; // fallback
+// Threshold do progress ring (0-100%)
+// Circumference = 2 * Math.PI * 16 = ~100.53, simplificamos pra 100
+const RING_CIRCUMFERENCE = 100;
 
-// Estado global
-let cooldownModifier = 1.0;       // 1.0 normal, 0.9 com Lucidez
+let cooldownModifier = 1.0;
 let lucidityActive = false;
-const enemyState = [];            // [{role, letter, color, championId, spells, spellImageIds, timers: [{remaining, active, intervalId}]}]
+const enemyState = [];
 
 // =====================================================================
-// Init: pega versao do DDragon, monta UI, conecta poller
+// Init
 // =====================================================================
 
 async function init() {
@@ -22,7 +23,7 @@ async function init() {
   setupHotkeyListener();
   setupResize();
   startPoller();
-  log('overlay iniciado');
+  log('overlay v0.2 iniciado');
 }
 
 async function loadDDragonVersion() {
@@ -48,7 +49,7 @@ function spellIconUrl(spellImageId) {
 }
 
 // =====================================================================
-// Build UI - cria as 5 linhas iniciais com placeholders
+// Build UI
 // =====================================================================
 
 function buildUI() {
@@ -74,18 +75,7 @@ function buildUI() {
     row.appendChild(roleLabel);
 
     for (let j = 0; j < 2; j++) {
-      const btn = document.createElement('button');
-      btn.className = 'spell-btn no-icon';
-      btn.dataset.row = i;
-      btn.dataset.slot = j;
-      btn.textContent = SpellData.SPELLS[enemy.spells[j]].letter;
-      btn.style.backgroundColor = applyAlpha(SpellData.SPELLS[enemy.spells[j]].color, 0.22);
-
-      const timerSpan = document.createElement('span');
-      timerSpan.className = 'timer';
-      btn.appendChild(timerSpan);
-
-      btn.addEventListener('click', () => onSpellClick(i, j));
+      const btn = createSpellButton(i, j, enemy.spells[j]);
       row.appendChild(btn);
     }
 
@@ -96,8 +86,8 @@ function buildUI() {
       championId: null,
       spellImageIds: [null, null],
       timers: [
-        { remaining: 0, active: false, intervalId: null },
-        { remaining: 0, active: false, intervalId: null },
+        { remaining: 0, totalCd: 0, active: false, intervalId: null },
+        { remaining: 0, totalCd: 0, active: false, intervalId: null },
       ],
     });
   }
@@ -105,6 +95,47 @@ function buildUI() {
   document.getElementById('reset-btn').addEventListener('click', resetAll);
   document.getElementById('lucid-btn').addEventListener('click', toggleLucidity);
   document.getElementById('close-btn').addEventListener('click', closeOverlay);
+}
+
+function createSpellButton(rowIdx, slotIdx, spellKey) {
+  const btn = document.createElement('button');
+  btn.className = 'spell-btn no-icon';
+  btn.dataset.row = rowIdx;
+  btn.dataset.slot = slotIdx;
+  btn.dataset.spellKey = spellKey;
+
+  const spellInfo = SpellData.SPELLS[spellKey];
+
+  // Spell icon (background)
+  const icon = document.createElement('span');
+  icon.className = 'spell-icon';
+  icon.style.backgroundColor = applyAlpha(spellInfo.color, 0.22);
+  icon.textContent = spellInfo.letter;
+  btn.appendChild(icon);
+
+  // SVG ring (progress) - usa o symbol declarado no HTML
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.classList.add('ring');
+  svg.setAttribute('viewBox', '0 0 36 36');
+  svg.innerHTML = `
+    <circle class="ring-track" cx="18" cy="18" r="16" fill="none" stroke-width="2"/>
+    <circle class="ring-progress" cx="18" cy="18" r="16" fill="none" stroke-width="2"
+            stroke-linecap="round" transform="rotate(-90 18 18)"/>
+  `;
+  btn.appendChild(svg);
+
+  // Timer label
+  const timerSpan = document.createElement('span');
+  timerSpan.className = 'timer';
+  btn.appendChild(timerSpan);
+
+  // Click handlers
+  btn.addEventListener('click', (e) => {
+    createRipple(e, btn);
+    onSpellClick(rowIdx, slotIdx);
+  });
+
+  return btn;
 }
 
 function applyAlpha(hexColor, alpha) {
@@ -115,7 +146,27 @@ function applyAlpha(hexColor, alpha) {
 }
 
 // =====================================================================
-// Update roster - chamado quando o LiveClientPoller detecta mudanca
+// Ripple effect on click
+// =====================================================================
+
+function createRipple(event, btn) {
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const x = event.clientX - rect.left - size / 2;
+  const y = event.clientY - rect.top - size / 2;
+
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  ripple.style.cssText = `
+    width: ${size}px; height: ${size}px;
+    left: ${x}px; top: ${y}px;
+  `;
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 500);
+}
+
+// =====================================================================
+// Update roster
 // =====================================================================
 
 function updateRoster(rawEnemies) {
@@ -133,67 +184,61 @@ function updateRoster(rawEnemies) {
     state.spellImageIds = enemy.spellImageIds || [null, null];
     state.champion = enemy.champion;
 
-    // Atualiza champion icon
+    // Champion icon - pop animation quando carrega
     const ci = row.querySelector('.ci');
     if (enemy.championId) {
-      ci.style.backgroundImage = `url('${championIconUrl(enemy.championId)}')`;
-      ci.style.background = `url('${championIconUrl(enemy.championId)}') center/cover, ${enemy.color}`;
+      const url = championIconUrl(enemy.championId);
+      ci.style.backgroundImage = `url('${url}')`;
+      ci.style.backgroundColor = enemy.color;
+      ci.classList.add('has-icon', 'loaded');
       ci.textContent = '';
+      // Remove classe loaded depois da animação pra poder repetir
+      setTimeout(() => ci.classList.remove('loaded'), 400);
     } else {
       ci.style.background = enemy.color;
+      ci.classList.remove('has-icon');
       ci.textContent = enemy.letter;
     }
 
-    // Atualiza role label
     row.querySelector('.role').textContent = enemy.role;
 
-    // Atualiza spells
+    // Update spell buttons
     const spellBtns = row.querySelectorAll('.spell-btn');
     spellBtns.forEach((btn, j) => {
       const spellKey = enemy.spells[j];
       const imageId = state.spellImageIds[j];
       const spellInfo = SpellData.SPELLS[spellKey];
 
-      // Reseta timer se mudou o spell
+      // Reseta timer
       const timer = state.timers[j];
       if (timer.active) {
         clearInterval(timer.intervalId);
         timer.active = false;
         timer.remaining = 0;
-        btn.classList.remove('active');
+        btn.classList.remove('active', 'warn', 'danger');
       }
 
       btn.dataset.spellKey = spellKey;
+      const icon = btn.querySelector('.spell-icon');
       const url = spellIconUrl(imageId);
-      if (url) {
-        btn.classList.add('has-icon');
-        btn.classList.remove('no-icon');
-        btn.style.backgroundImage = `url('${url}')`;
-        btn.style.backgroundColor = '';
-        btn.textContent = '';
-      } else {
-        btn.classList.add('no-icon');
-        btn.classList.remove('has-icon');
-        btn.style.backgroundImage = '';
-        btn.style.backgroundColor = applyAlpha(spellInfo.color, 0.22);
-        btn.textContent = spellInfo.letter;
-      }
 
-      // Re-adiciona o timer span
-      let timerSpan = btn.querySelector('.timer');
-      if (!timerSpan) {
-        timerSpan = document.createElement('span');
-        timerSpan.className = 'timer';
-        btn.appendChild(timerSpan);
+      if (url) {
+        icon.style.backgroundImage = `url('${url}')`;
+        icon.style.backgroundColor = '';
+        icon.textContent = '';
+      } else {
+        icon.style.backgroundImage = '';
+        icon.style.backgroundColor = applyAlpha(spellInfo.color, 0.22);
+        icon.textContent = spellInfo.letter;
       }
     });
   });
 
-  log('roster atualizado: ' + parsed.map(e => e.champion).join(', '));
+  log('roster: ' + parsed.map(e => e.champion).join(', '));
 }
 
 // =====================================================================
-// Spell click handlers
+// Spell timer logic
 // =====================================================================
 
 function onSpellClick(rowIdx, slotIdx) {
@@ -202,7 +247,7 @@ function onSpellClick(rowIdx, slotIdx) {
   const spellKey = state.spells[slotIdx];
   const spellInfo = SpellData.SPELLS[spellKey];
 
-  if (spellInfo.cd === 0) return; // smite/mark - nao rastreia
+  if (spellInfo.cd === 0) return; // smite/mark
 
   if (timer.active) {
     stopTimer(rowIdx, slotIdx);
@@ -216,51 +261,76 @@ function startTimer(rowIdx, slotIdx) {
   const timer = state.timers[slotIdx];
   const spellInfo = SpellData.SPELLS[state.spells[slotIdx]];
 
-  timer.remaining = Math.max(1, Math.floor(spellInfo.cd * cooldownModifier));
+  const totalCd = Math.max(1, Math.floor(spellInfo.cd * cooldownModifier));
+  timer.totalCd = totalCd;
+  timer.remaining = totalCd;
   timer.active = true;
 
-  const btn = document.querySelector(
-    `.spell-btn[data-row="${rowIdx}"][data-slot="${slotIdx}"]`
-  );
+  const btn = getSpellBtn(rowIdx, slotIdx);
   btn.classList.add('active');
-  renderTimer(btn, timer.remaining);
+  updateTimerVisual(btn, timer);
 
   timer.intervalId = setInterval(() => {
     timer.remaining -= 1;
     if (timer.remaining <= 0) {
-      stopTimer(rowIdx, slotIdx);
+      stopTimer(rowIdx, slotIdx, true);
       return;
     }
-    renderTimer(btn, timer.remaining);
+    updateTimerVisual(btn, timer);
   }, 1000);
 }
 
-function stopTimer(rowIdx, slotIdx) {
+function stopTimer(rowIdx, slotIdx, completed = false) {
   const timer = enemyState[rowIdx].timers[slotIdx];
   if (timer.intervalId) clearInterval(timer.intervalId);
   timer.active = false;
   timer.remaining = 0;
+  timer.totalCd = 0;
 
-  const btn = document.querySelector(
-    `.spell-btn[data-row="${rowIdx}"][data-slot="${slotIdx}"]`
-  );
-  if (btn) {
-    btn.classList.remove('active');
-    const t = btn.querySelector('.timer');
-    if (t) {
-      t.textContent = '';
-      t.classList.remove('warn');
-    }
+  const btn = getSpellBtn(rowIdx, slotIdx);
+  if (!btn) return;
+
+  btn.classList.remove('active', 'warn', 'danger');
+  const t = btn.querySelector('.timer');
+  if (t) t.textContent = '';
+
+  // Reseta o anel
+  const ringProgress = btn.querySelector('.ring-progress');
+  if (ringProgress) ringProgress.style.strokeDashoffset = '0';
+
+  // Flash de "pronto" quando o timer chega ao fim naturalmente
+  if (completed) {
+    btn.classList.add('ready-flash');
+    setTimeout(() => btn.classList.remove('ready-flash'), 600);
   }
 }
 
-function renderTimer(btn, remaining) {
-  const span = btn.querySelector('.timer');
-  if (!span) return;
-  const m = Math.floor(remaining / 60);
-  const s = remaining % 60;
-  span.textContent = `${m}:${String(s).padStart(2, '0')}`;
-  span.classList.toggle('warn', remaining <= 30);
+function updateTimerVisual(btn, timer) {
+  // Atualiza texto do timer
+  const m = Math.floor(timer.remaining / 60);
+  const s = timer.remaining % 60;
+  const t = btn.querySelector('.timer');
+  if (t) t.textContent = `${m}:${String(s).padStart(2, '0')}`;
+
+  // Atualiza progress ring (vai diminuindo conforme passa)
+  const ringProgress = btn.querySelector('.ring-progress');
+  if (ringProgress && timer.totalCd > 0) {
+    const progress = timer.remaining / timer.totalCd;
+    const offset = RING_CIRCUMFERENCE * (1 - progress);
+    ringProgress.style.strokeDashoffset = offset;
+  }
+
+  // Aplica classes de cor conforme tempo restante
+  btn.classList.remove('warn', 'danger');
+  if (timer.remaining <= 10) {
+    btn.classList.add('danger');
+  } else if (timer.remaining <= 30) {
+    btn.classList.add('warn');
+  }
+}
+
+function getSpellBtn(rowIdx, slotIdx) {
+  return document.querySelector(`.spell-btn[data-row="${rowIdx}"][data-slot="${slotIdx}"]`);
 }
 
 // =====================================================================
@@ -282,9 +352,13 @@ function toggleLucidity() {
 }
 
 function closeOverlay() {
-  overwolf.windows.getCurrentWindow(result => {
-    if (result.success) overwolf.windows.close(result.window.id);
-  });
+  if (typeof overwolf !== 'undefined' && overwolf.windows) {
+    overwolf.windows.getCurrentWindow(result => {
+      if (result.success) overwolf.windows.close(result.window.id);
+    });
+  } else {
+    window.close();
+  }
 }
 
 // =====================================================================
@@ -292,14 +366,14 @@ function closeOverlay() {
 // =====================================================================
 
 function setStatus(text, mode) {
-  document.getElementById('status-text').textContent = text;
-  const dot = document.getElementById('status-dot');
-  dot.classList.remove('live', 'idle');
-  dot.classList.add(mode);
+  document.querySelector('.status-text').textContent = text;
+  const overlay = document.getElementById('overlay');
+  overlay.classList.remove('state-idle', 'state-live');
+  overlay.classList.add(mode === 'live' ? 'state-live' : 'state-idle');
 }
 
 // =====================================================================
-// Riot poller integration
+// Riot poller
 // =====================================================================
 
 function startPoller() {
@@ -313,12 +387,10 @@ function startPoller() {
   poller.addEventListener('game-ended', () => {
     setStatus('AGUARDANDO', 'idle');
     resetAll();
-    // Volta pros placeholders
     enemyState.forEach((_, i) => {
       const def = SpellData.DEFAULT_ENEMIES[i];
       enemyState[i].championId = null;
       enemyState[i].spellImageIds = [null, null];
-      // Re-renderiza usando o default
       updateRowVisual(i, def);
     });
     log('partida acabou');
@@ -337,28 +409,22 @@ function updateRowVisual(i, enemy) {
   const ci = row.querySelector('.ci');
   ci.style.backgroundImage = '';
   ci.style.background = enemy.color;
+  ci.classList.remove('has-icon');
   ci.textContent = enemy.letter;
   row.querySelector('.role').textContent = enemy.role;
 
   const spellBtns = row.querySelectorAll('.spell-btn');
   spellBtns.forEach((btn, j) => {
     const spellInfo = SpellData.SPELLS[enemy.spells[j]];
-    btn.classList.add('no-icon');
-    btn.classList.remove('has-icon');
-    btn.style.backgroundImage = '';
-    btn.style.backgroundColor = applyAlpha(spellInfo.color, 0.22);
-    btn.textContent = spellInfo.letter;
-    let t = btn.querySelector('.timer');
-    if (!t) {
-      t = document.createElement('span');
-      t.className = 'timer';
-      btn.appendChild(t);
-    }
+    const icon = btn.querySelector('.spell-icon');
+    icon.style.backgroundImage = '';
+    icon.style.backgroundColor = applyAlpha(spellInfo.color, 0.22);
+    icon.textContent = spellInfo.letter;
   });
 }
 
 // =====================================================================
-// Hotkey listener (mensagens vindas do background)
+// Hotkey listener (mensagens do background)
 // =====================================================================
 
 function setupHotkeyListener() {
@@ -370,7 +436,7 @@ function setupHotkeyListener() {
 }
 
 // =====================================================================
-// Resize handle (drag no canto inferior direito)
+// Resize handle
 // =====================================================================
 
 function setupResize() {
@@ -383,13 +449,15 @@ function setupResize() {
     resizing = true;
     startX = e.screenX;
     startY = e.screenY;
-    overwolf.windows.getCurrentWindow(result => {
-      if (result.success) {
-        startW = result.window.width;
-        startH = result.window.height;
-        windowId = result.window.id;
-      }
-    });
+    if (typeof overwolf !== 'undefined' && overwolf.windows) {
+      overwolf.windows.getCurrentWindow(result => {
+        if (result.success) {
+          startW = result.window.width;
+          startH = result.window.height;
+          windowId = result.window.id;
+        }
+      });
+    }
   });
 
   document.addEventListener('mousemove', e => {
@@ -406,16 +474,8 @@ function setupResize() {
   });
 }
 
-// =====================================================================
-// Logging simples
-// =====================================================================
-
 function log(msg) {
   console.log(`[overlay] ${msg}`);
 }
-
-// =====================================================================
-// Bootstrap
-// =====================================================================
 
 document.addEventListener('DOMContentLoaded', init);

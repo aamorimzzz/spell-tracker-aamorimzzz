@@ -1,6 +1,43 @@
 /* =====================================================================
-   Spell Tracker overlay - estilo translucido
+   Spell Tracker by aamorimzzz - Overlay v0.2 (animated edition)
    ===================================================================== */
+
+:root {
+  /* Cores base */
+  --bg-base: rgba(10, 14, 20, 0.55);
+  --bg-elevated: rgba(255, 255, 255, 0.06);
+  --border-soft: rgba(255, 255, 255, 0.10);
+  --border-medium: rgba(255, 255, 255, 0.18);
+
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.70);
+  --text-tertiary: rgba(255, 255, 255, 0.45);
+  --text-quaternary: rgba(255, 255, 255, 0.30);
+
+  /* Status colors */
+  --c-live: #7dca7d;
+  --c-warn: #ffcd5b;
+  --c-danger: #ff6b6b;
+  --c-info: #9ec5ff;
+
+  /* Spell category colors */
+  --c-flash:   #dcb43c;
+  --c-tp:      #3c82dc;
+  --c-ignite:  #dc5a32;
+  --c-heal:    #50c882;
+  --c-exhaust: #a0a0a0;
+  --c-cleanse: #e8e8a0;
+  --c-barrier: #a0c8e8;
+  --c-ghost:   #c8a0e8;
+
+  /* Easings & timing */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-fast: 150ms;
+  --t-base: 250ms;
+  --t-slow: 400ms;
+}
 
 * {
   box-sizing: border-box;
@@ -15,219 +52,501 @@ html, body {
   height: 100%;
   background: transparent;
   overflow: hidden;
-  font-family: 'Segoe UI', 'Arial', sans-serif;
-  color: rgba(255, 255, 255, 0.92);
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  font-feature-settings: 'tnum' 1, 'cv11' 1;
+  color: var(--text-primary);
   font-size: 13px;
 }
+
+/* =====================================================================
+   Container principal - glassmorphism + container queries
+   ===================================================================== */
 
 #overlay {
   position: relative;
   width: 100%;
   height: 100%;
-  background: rgba(10, 14, 20, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 6px 8px 14px 8px;
+  background: var(--bg-base);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 8px 10px 16px 10px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  -webkit-app-region: drag; /* permite arrastar pela area inteira (exceto botoes/spells) */
+  gap: 4px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  -webkit-app-region: drag;
+  container-type: inline-size;
+  animation: overlay-in 350ms var(--ease-out) both;
 }
 
-/* botoes/spells nao devem disparar drag */
+@keyframes overlay-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Borda gradient sutil quando AO VIVO */
+#overlay.state-live::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 8px;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(125, 202, 125, 0.4),
+    rgba(125, 202, 125, 0.05) 30%,
+    transparent 50%,
+    rgba(125, 202, 125, 0.05) 70%,
+    rgba(125, 202, 125, 0.4)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: shimmer 4s linear infinite;
+  background-size: 200% 200%;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
 button, .spell-btn, .ci, #close-btn, #resize-grip {
   -webkit-app-region: no-drag;
 }
 
-/* ---------- Header ---------- */
+/* =====================================================================
+   Header
+   ===================================================================== */
 
 #header {
   display: flex;
   align-items: center;
-  gap: 4px;
   padding: 0 2px 4px;
+}
+
+.header-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 9px;
   letter-spacing: 1.2px;
   font-weight: 500;
+  flex: 1;
+  min-width: 0;
 }
 
-#header-title {
-  color: rgba(255, 255, 255, 0.5);
+.brand {
+  color: var(--text-tertiary);
+  white-space: nowrap;
 }
-#header-divider {
-  color: rgba(255, 255, 255, 0.3);
-  margin: 0 2px;
-}
-#status-dot {
-  font-size: 12px;
-  line-height: 1;
-}
-#status-dot.live { color: #7dca7d; }
-#status-dot.idle { color: #888; }
-#status-text {
-  color: rgba(255, 255, 255, 0.6);
-}
-#status-dot.live + #status-text { color: #7dca7d; }
 
-#close-btn {
-  margin-left: auto;
+.divider {
+  color: var(--text-quaternary);
+}
+
+.status-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color var(--t-base) var(--ease-out);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #888;
+  transition: background-color var(--t-base) var(--ease-out),
+              box-shadow var(--t-base) var(--ease-out);
+}
+
+.status-text {
+  color: var(--text-tertiary);
+  transition: color var(--t-base) var(--ease-out);
+}
+
+.state-live .status-dot {
+  background: var(--c-live);
+  box-shadow: 0 0 8px rgba(125, 202, 125, 0.6);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.state-live .status-text {
+  color: var(--c-live);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 8px rgba(125, 202, 125, 0.6); }
+  50%      { box-shadow: 0 0 14px rgba(125, 202, 125, 0.9); }
+}
+
+.icon-btn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 16px;
+  color: var(--text-tertiary);
+  cursor: pointer;
   width: 18px;
   height: 18px;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color var(--t-fast) var(--ease-out),
+              background-color var(--t-fast) var(--ease-out);
 }
-#close-btn:hover { color: rgba(255, 255, 255, 0.95); }
 
-/* ---------- Linhas dos inimigos ---------- */
+.icon-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+/* =====================================================================
+   Linhas dos inimigos
+   ===================================================================== */
 
 #rows-container {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   flex: 1;
+  min-height: 0;
 }
 
 .enemy-row {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   padding: 2px 0;
+  opacity: 0;
+  animation: row-in var(--t-slow) var(--ease-out) forwards;
 }
 
+/* Stagger animation - cada linha aparece levemente depois da anterior */
+.enemy-row:nth-child(1) { animation-delay: 0ms; }
+.enemy-row:nth-child(2) { animation-delay: 50ms; }
+.enemy-row:nth-child(3) { animation-delay: 100ms; }
+.enemy-row:nth-child(4) { animation-delay: 150ms; }
+.enemy-row:nth-child(5) { animation-delay: 200ms; }
+
+@keyframes row-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Champion icon */
 .ci {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border-medium);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
   font-weight: 500;
-  color: white;
+  color: var(--text-primary);
   flex-shrink: 0;
   background-size: cover;
   background-position: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--t-base) var(--ease-bounce);
 }
 
+.ci.has-icon {
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Glow do campeão quando o jogo carrega */
+.ci.loaded {
+  animation: champ-pop 400ms var(--ease-bounce);
+}
+
+@keyframes champ-pop {
+  0%   { transform: scale(0.8); }
+  50%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* Role label */
 .role {
   font-size: 9px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-tertiary);
   letter-spacing: 0.5px;
-  font-weight: 500;
-  min-width: 22px;
+  font-weight: 600;
+  min-width: 24px;
+  white-space: nowrap;
 }
 
-/* ---------- Spell button ---------- */
+/* =====================================================================
+   Spell button - com progress ring SVG
+   ===================================================================== */
 
 .spell-btn {
   position: relative;
-  width: 30px;
-  height: 30px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.95);
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
+  cursor: pointer;
+  background: transparent;
+  border: none;
   padding: 0;
-  background-size: cover;
-  background-position: center;
-  transition: filter 0.15s;
+  border-radius: 5px;
+  transition: transform var(--t-fast) var(--ease-out);
 }
 
 .spell-btn:hover {
-  filter: brightness(1.15);
+  transform: scale(1.06);
 }
 
-.spell-btn.has-icon {
-  background-color: transparent;
+.spell-btn:active {
+  transform: scale(0.94);
 }
 
-.spell-btn.no-icon {
-  /* Cor de fundo aplicada via JS conforme o spell */
+/* Container interno (ícone) */
+.spell-icon {
+  position: absolute;
+  inset: 3px;
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--border-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: filter var(--t-base) var(--ease-out),
+              opacity var(--t-base) var(--ease-out);
 }
 
+/* Quando spell está em CD, o ícone escurece */
+.spell-btn.active .spell-icon {
+  filter: brightness(0.45) saturate(0.7);
+}
+
+/* Progress ring */
+.spell-btn .ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--t-fast) var(--ease-out);
+}
+
+.spell-btn.active .ring {
+  opacity: 1;
+}
+
+.ring-track {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.ring-progress {
+  stroke: var(--c-live);
+  /* circumference = 2 * π * 16 ≈ 100.53 - simplifico pra 100 */
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear,
+              stroke var(--t-base) var(--ease-out);
+}
+
+.spell-btn.warn .ring-progress {
+  stroke: var(--c-warn);
+}
+
+.spell-btn.danger .ring-progress {
+  stroke: var(--c-danger);
+  animation: ring-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes ring-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
+
+/* Timer text */
 .spell-btn .timer {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.65);
-  border-radius: 3px;
-  color: white;
   font-size: 10px;
+  font-weight: 600;
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
-  font-weight: 500;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: color var(--t-base) var(--ease-out),
+              opacity var(--t-base) var(--ease-out);
+}
+
+.spell-btn.active .timer {
+  opacity: 1;
+}
+
+.spell-btn.warn .timer {
+  color: var(--c-warn);
+}
+
+.spell-btn.danger .timer {
+  color: var(--c-danger);
+  animation: timer-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes timer-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+
+/* Flash de luz quando o spell acabou (volta) */
+.spell-btn.ready-flash {
+  animation: ready-flash 600ms var(--ease-out);
+}
+
+@keyframes ready-flash {
+  0%   { box-shadow: 0 0 0 0 rgba(125, 202, 125, 0.0); }
+  20%  { box-shadow: 0 0 0 4px rgba(125, 202, 125, 0.6); }
+  100% { box-shadow: 0 0 0 12px rgba(125, 202, 125, 0); }
+}
+
+/* Ripple effect on click */
+.spell-btn .ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple-anim 500ms var(--ease-out);
+  background: rgba(255, 255, 255, 0.4);
   pointer-events: none;
 }
 
-.spell-btn .timer.warn {
-  color: #ffcd5b;
+@keyframes ripple-anim {
+  to { transform: scale(2.5); opacity: 0; }
 }
 
-.spell-btn:not(.active) .timer { display: none; }
-
-/* ---------- Toolbar ---------- */
+/* =====================================================================
+   Toolbar
+   ===================================================================== */
 
 #toolbar {
   display: flex;
-  gap: 4px;
-  padding: 4px 2px 0;
+  gap: 5px;
+  padding: 5px 2px 0;
+  flex-shrink: 0;
 }
 
 .tb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 3px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
   font-size: 10px;
-  padding: 3px 8px;
+  padding: 4px 10px;
   cursor: pointer;
   font-family: inherit;
+  font-weight: 500;
+  transition: background-color var(--t-fast) var(--ease-out),
+              color var(--t-fast) var(--ease-out),
+              border-color var(--t-fast) var(--ease-out),
+              transform var(--t-fast) var(--ease-out);
 }
 
 .tb-btn:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.tb-btn:active {
+  transform: scale(0.96);
 }
 
 .tb-btn.active {
   background: rgba(120, 180, 255, 0.18);
-  color: rgba(255, 255, 255, 0.95);
-  border-color: rgba(120, 180, 255, 0.4);
+  color: var(--text-primary);
+  border-color: rgba(120, 180, 255, 0.45);
+  box-shadow: 0 0 12px rgba(120, 180, 255, 0.2);
 }
 
-/* ---------- Resize grip (canto inferior direito) ---------- */
+.tb-icon {
+  flex-shrink: 0;
+}
+
+/* =====================================================================
+   Resize grip
+   ===================================================================== */
 
 #resize-grip {
   position: absolute;
-  right: 2px;
-  bottom: 2px;
-  width: 12px;
-  height: 12px;
+  right: 3px;
+  bottom: 3px;
+  width: 14px;
+  height: 14px;
   cursor: nwse-resize;
-  background-image: linear-gradient(
-    135deg,
-    transparent 0%,
-    transparent 50%,
-    rgba(255, 255, 255, 0.35) 50%,
-    rgba(255, 255, 255, 0.35) 60%,
-    transparent 60%,
-    transparent 70%,
-    rgba(255, 255, 255, 0.35) 70%,
-    rgba(255, 255, 255, 0.35) 80%,
-    transparent 80%,
-    transparent 90%,
-    rgba(255, 255, 255, 0.35) 90%
-  );
+  background-image:
+    linear-gradient(135deg,
+      transparent 0 50%,
+      rgba(255, 255, 255, 0.4) 50% 60%,
+      transparent 60% 70%,
+      rgba(255, 255, 255, 0.4) 70% 80%,
+      transparent 80% 90%,
+      rgba(255, 255, 255, 0.4) 90% 100%);
+  opacity: 0.5;
+  transition: opacity var(--t-fast) var(--ease-out);
+}
+
+#resize-grip:hover {
+  opacity: 1;
+}
+
+/* =====================================================================
+   CONTAINER QUERIES - layout responsivo de verdade
+   ===================================================================== */
+
+/* Modo ultra-compacto: width < 200px - esconde a label "TOP/JNG/etc" */
+@container (max-width: 200px) {
+  .role { display: none; }
+  .ci { width: 24px; height: 24px; font-size: 10px; }
+  .spell-btn { width: 28px; height: 28px; }
+  .spell-icon { font-size: 11px; }
+  .spell-btn .timer { font-size: 9px; }
+  .brand { display: none; }
+  .divider { display: none; }
+  #overlay { padding: 6px 8px 14px 8px; }
+  .tb-btn { font-size: 9px; padding: 3px 7px; }
+}
+
+/* Modo expandido: width > 320px - tudo cresce */
+@container (min-width: 320px) {
+  .ci { width: 34px; height: 34px; font-size: 13px; }
+  .spell-btn { width: 38px; height: 38px; }
+  .spell-icon { font-size: 14px; }
+  .spell-btn .timer { font-size: 12px; }
+  .role { font-size: 10px; min-width: 28px; }
+  .header-text { font-size: 10px; }
+  .tb-btn { font-size: 11px; padding: 5px 12px; }
+  .enemy-row { gap: 8px; }
+  #overlay { gap: 6px; padding: 10px 12px 18px 12px; }
+}
+
+/* Modo "ultra-grande": > 380px */
+@container (min-width: 380px) {
+  .ci { width: 40px; height: 40px; font-size: 15px; }
+  .spell-btn { width: 44px; height: 44px; }
+  .spell-icon { font-size: 16px; }
+  .spell-btn .timer { font-size: 13px; }
 }

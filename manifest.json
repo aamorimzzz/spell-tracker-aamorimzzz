@@ -4,7 +4,7 @@
 
   "meta": {
     "name": "Spell Tracker by aamorimzzz",
-    "version": "0.1.0",
+    "version": "0.2.2",
     "minimum-overwolf-version": "0.176.0",
     "author": "aamorimzzz",
     "icon": "icons/IconMouseOver.png",
@@ -23,6 +23,15 @@
   "data": {
     "start_window": "background",
 
+    "externally_connectable": {
+      "matches": [
+        "https://ddragon.leagueoflegends.com",
+        "https://*.ddragon.leagueoflegends.com",
+        "https://127.0.0.1:2999",
+        "https://127.0.0.1"
+      ]
+    },
+
     "windows": {
       "background": {
         "file": "js/background.html",
@@ -37,6 +46,9 @@
         "in_game_only": true,
         "clickable": true,
         "topmost": true,
+        "grab_keyboard_focus": false,
+        "grab_focus_on_desktop": false,
+        "block_top_window_navigation": true,
         "size": {
           "width": 240,
           "height": 320

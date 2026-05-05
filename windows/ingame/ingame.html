@@ -6,26 +6,54 @@
   <link rel="stylesheet" href="ingame.css">
 </head>
 <body>
-  <div id="overlay">
-    <div id="header">
-      <span id="header-title">SPELL TRACKER</span>
-      <span id="header-divider">·</span>
-      <span id="status-dot" class="idle">●</span>
-      <span id="status-text">AGUARDANDO</span>
-      <button id="close-btn" title="Fechar">×</button>
-    </div>
+  <div id="overlay" class="state-idle">
+    <header id="header">
+      <div class="header-text">
+        <span class="brand">SPELL TRACKER</span>
+        <span class="divider">·</span>
+        <span class="status-wrap">
+          <span class="status-dot"></span>
+          <span class="status-text">AGUARDANDO</span>
+        </span>
+      </div>
+      <button id="close-btn" class="icon-btn" title="Fechar" aria-label="Fechar">
+        <svg viewBox="0 0 16 16" width="12" height="12">
+          <path d="M3 3 L13 13 M13 3 L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </header>
 
     <div id="rows-container"></div>
 
-    <div id="toolbar">
-      <button id="reset-btn" class="tb-btn">Reset</button>
-      <button id="lucid-btn" class="tb-btn">Botas</button>
-    </div>
+    <footer id="toolbar">
+      <button id="reset-btn" class="tb-btn">
+        <svg viewBox="0 0 16 16" width="11" height="11" class="tb-icon">
+          <path d="M2 8 a6 6 0 1 1 1.5 4 M2 12 L2 8 L6 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Reset</span>
+      </button>
+      <button id="lucid-btn" class="tb-btn">
+        <svg viewBox="0 0 16 16" width="11" height="11" class="tb-icon">
+          <path d="M5 3 h6 l2 4 -5 7 -5 -7 z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <span>Botas</span>
+      </button>
+    </footer>
 
-    <div id="resize-grip"></div>
+    <div id="resize-grip" aria-label="Redimensionar"></div>
   </div>
 
-  <!-- Scripts -->
+  <!-- SVG template usado pra criar os anéis dos spells -->
+  <svg style="display:none">
+    <defs>
+      <symbol id="spell-ring" viewBox="0 0 36 36">
+        <circle class="ring-track" cx="18" cy="18" r="16" fill="none" stroke-width="2"/>
+        <circle class="ring-progress" cx="18" cy="18" r="16" fill="none" stroke-width="2"
+                stroke-linecap="round" transform="rotate(-90 18 18)"/>
+      </symbol>
+    </defs>
+  </svg>
+
   <script src="../../js/spell-data.js"></script>
   <script src="../../js/live-client-api.js"></script>
   <script src="ingame.js"></script>
